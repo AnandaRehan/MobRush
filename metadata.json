@@ -1,0 +1,7 @@
+{
+  "name": "Mob Rush",
+  "description": "Game survival roguelike auto-shooter terinspirasi dari Mob Rush dengan pemilihan skill pasif, item pemulihan, kristal berkat setiap kelipatan level 5, dan 2 hero unik.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
