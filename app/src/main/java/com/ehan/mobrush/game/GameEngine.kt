@@ -354,24 +354,35 @@ class GameEngine(
     spawnTimer -= dt
     bossSpawnTimer -= dt
 
+    // Dynamic max mob cap: starts at 24 and gradually scales up to 42 max
+    // Prevents performance degradation while maintaining exciting wave density
+    val maxMobsLimit = (24 + (survivalTimeSec / 20f).toInt()).coerceIn(24, 42)
+    val currentAliveMobs = mobs.count { !it.isDead }
+
     // Difficulty scales with time survived
-    val spawnInterval = (2.2f / (1f + (survivalTimeSec / 90f))).coerceAtLeast(0.45f)
+    val spawnInterval = (2.2f / (1f + (survivalTimeSec / 90f))).coerceAtLeast(0.6f)
     if (spawnTimer <= 0f) {
       spawnTimer = spawnInterval
-      spawnMobWave()
+      if (currentAliveMobs < maxMobsLimit) {
+        spawnMobWave(maxMobsLimit - currentAliveMobs)
+      }
     }
 
     if (bossSpawnTimer <= 0f) {
       bossSpawnTimer = 75f
-      spawnBoss()
+      val hasLivingBoss = mobs.any { !it.isDead && it.species.isBoss }
+      if (!hasLivingBoss) {
+        spawnBoss()
+      }
     }
   }
 
-  private fun spawnMobWave() {
-    val count = (2 + (survivalTimeSec / 35f).toInt()).coerceIn(2, 8)
+  private fun spawnMobWave(availableSlots: Int) {
+    val desiredCount = (2 + (survivalTimeSec / 35f).toInt()).coerceIn(2, 6)
+    val count = desiredCount.coerceAtMost(availableSlots)
     for (i in 0 until count) {
       val angle = Random.nextFloat() * 2f * PI.toFloat()
-      val dist = Random.nextFloat() * 250f + 480f
+      val dist = Random.nextFloat() * 220f + 450f
       val sx = (playerX + cos(angle) * dist).coerceIn(50f, mapWidth - 50f)
       val sy = (playerY + sin(angle) * dist).coerceIn(50f, mapHeight - 50f)
 
@@ -444,6 +455,15 @@ class GameEngine(
       val dx = playerX - mob.x
       val dy = playerY - mob.y
       val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+
+      // Reposition distant non-boss mobs that drifted too far away (> 1300f)
+      if (dist > 1300f && !mob.species.isBoss) {
+        val repositionAngle = Random.nextFloat() * 2f * PI.toFloat()
+        val repositionDist = Random.nextFloat() * 150f + 480f
+        mob.x = (playerX + cos(repositionAngle) * repositionDist).coerceIn(40f, mapWidth - 40f)
+        mob.y = (playerY + sin(repositionAngle) * repositionDist).coerceIn(40f, mapHeight - 40f)
+        continue
+      }
 
       if (dist > 1f) {
         val nx = dx / dist
@@ -614,22 +634,31 @@ class GameEngine(
       soundManager.playMobDeath()
       spawnParticles(mob.x, mob.y, mob.species.accentColor, if (mob.species.isBoss) 30 else 12)
 
-      // Drop XP Gem
+      // Drop XP Gem (Cap to 45 active gems to prevent lag, merging if over limit)
       val gemColor = when {
         mob.species.isBoss -> GoldAccent
         mob.species.xpValue >= 30 -> PurpleDark
         mob.species.xpValue >= 20 -> ExpBlue
         else -> EmeraldHeal
       }
-      val gem = ExpGem(
-        id = entityIdCounter++,
-        x = mob.x,
-        y = mob.y,
-        xpValue = mob.species.xpValue,
-        radius = if (mob.species.isBoss) 16f else 10f,
-        color = gemColor
-      )
-      expGems.add(gem)
+      if (expGems.size >= 45) {
+        // Merge with nearest gem
+        val nearestGem = expGems.minByOrNull { (it.x - mob.x) * (it.x - mob.x) + (it.y - mob.y) * (it.y - mob.y) }
+        if (nearestGem != null) {
+          nearestGem.xpValue += mob.species.xpValue
+          nearestGem.radius = (nearestGem.radius + 1.5f).coerceAtMost(18f)
+        }
+      } else {
+        val gem = ExpGem(
+          id = entityIdCounter++,
+          x = mob.x,
+          y = mob.y,
+          xpValue = mob.species.xpValue,
+          radius = if (mob.species.isBoss) 16f else 10f,
+          color = gemColor
+        )
+        expGems.add(gem)
+      }
     }
   }
 
@@ -826,6 +855,9 @@ class GameEngine(
   }
 
   private fun spawnDamageIndicator(x: Float, y: Float, text: String, color: androidx.compose.ui.graphics.Color, isCrit: Boolean) {
+    if (damageIndicators.size >= 16) {
+      damageIndicators.removeAt(0)
+    }
     val ind = DamageIndicator(
       id = entityIdCounter++,
       x = x,
@@ -838,18 +870,22 @@ class GameEngine(
   }
 
   private fun spawnParticles(x: Float, y: Float, color: androidx.compose.ui.graphics.Color, count: Int) {
-    for (i in 0 until count) {
+    val actualCount = count.coerceAtMost(if (particles.size > 30) 2 else 6)
+    for (i in 0 until actualCount) {
+      if (particles.size >= 40) {
+        particles.removeAt(0)
+      }
       val angle = Random.nextFloat() * 2f * PI.toFloat()
-      val speed = Random.nextFloat() * 180f + 40f
+      val speed = Random.nextFloat() * 160f + 30f
       val particle = Particle(
         id = entityIdCounter++,
         x = x,
         y = y,
         vx = cos(angle) * speed,
         vy = sin(angle) * speed,
-        radius = Random.nextFloat() * 4f + 3f,
+        radius = Random.nextFloat() * 3.5f + 2.5f,
         color = color,
-        maxLifetime = Random.nextFloat() * 0.35f + 0.25f
+        maxLifetime = Random.nextFloat() * 0.3f + 0.2f
       )
       particles.add(particle)
     }

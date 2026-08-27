@@ -51,6 +51,23 @@ fun GameScreen(
 
   val engine = viewModel.engine
 
+  val damageTextPaint = remember {
+    Paint().apply {
+      textAlign = Paint.Align.CENTER
+      typeface = Typeface.DEFAULT_BOLD
+      isAntiAlias = true
+    }
+  }
+
+  var renderTick by remember { mutableLongStateOf(0L) }
+  LaunchedEffect(gamePhase) {
+    if (gamePhase == GamePhase.PLAYING) {
+      while (true) {
+        withFrameNanos { renderTick = it }
+      }
+    }
+  }
+
   var joystickCenter by remember { mutableStateOf(Offset.Zero) }
   var joystickKnob by remember { mutableStateOf(Offset.Zero) }
   var isJoystickActive by remember { mutableStateOf(false) }
@@ -107,6 +124,9 @@ fun GameScreen(
           )
         }
     ) {
+      // Observe frame tick to trigger vsync synchronized frame redraws
+      if (renderTick >= 0) { /* state read for recomposition/invalidation */ }
+
       val screenWidth = size.width
       val screenHeight = size.height
 
@@ -298,21 +318,16 @@ fun GameScreen(
         )
       }
 
-      // Draw Damage Indicators (Native Canvas Text)
+      // Draw Damage Indicators (Native Canvas Text) using cached Paint
       drawContext.canvas.nativeCanvas.apply {
-        val paint = Paint().apply {
-          textAlign = Paint.Align.CENTER
-          typeface = Typeface.DEFAULT_BOLD
-          isAntiAlias = true
-        }
         for (dmg in engine.damageIndicators) {
           val dx = dmg.x - cameraX
           val dy = dmg.y - cameraY
           val alpha = (1f - (dmg.lifetime / dmg.maxLifetime)).coerceIn(0f, 1f)
-          paint.color = dmg.color.toArgb()
-          paint.alpha = (alpha * 255).toInt()
-          paint.textSize = if (dmg.isCritical) 38f else 26f
-          drawText(dmg.text, dx, dy, paint)
+          damageTextPaint.color = dmg.color.toArgb()
+          damageTextPaint.alpha = (alpha * 255).toInt()
+          damageTextPaint.textSize = if (dmg.isCritical) 38f else 26f
+          drawText(dmg.text, dx, dy, damageTextPaint)
         }
       }
 
