@@ -363,215 +363,11 @@ fun GameScreen(
     }
 
     // 2. TOP HUD OVERLAY
-    Column(
-      modifier = Modifier
-        .fillMaxWidth()
-        .systemBarsPadding()
-        .padding(horizontal = 14.dp, vertical = 8.dp)
-    ) {
-      // Top Status Bento Bar: Level, XP Bar, Timer, Kills, Pause
-      Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = BentoSurfaceElevated.copy(alpha = 0.92f),
-        border = BorderStroke(1.dp, BentoBorder),
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-          ) {
-            // Level Badge
-            Surface(
-              shape = RoundedCornerShape(10.dp),
-              color = BentoAccentPrimary
-            ) {
-              Text(
-                text = "LV ${engine.level}",
-                color = BentoAccentIce,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-              )
-            }
-
-            // XP Progress Bar
-            Column(modifier = Modifier.weight(1f)) {
-              val xpProgress = (engine.currentXp.toFloat() / engine.requiredXp.toFloat()).coerceIn(0f, 1f)
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .height(10.dp)
-                  .clip(RoundedCornerShape(5.dp))
-                  .background(BentoSurfaceHighlight)
-              ) {
-                Box(
-                  modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(xpProgress)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(
-                      Brush.horizontalGradient(
-                        colors = listOf(BentoAccentPrimary, BentoAccentIce, BentoAccentIceLight)
-                      )
-                    )
-                )
-              }
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-              ) {
-                Text(
-                  text = "XP: ${engine.currentXp}/${engine.requiredXp}",
-                  color = BentoAccentIce,
-                  fontSize = 9.sp,
-                  fontWeight = FontWeight.Bold
-                )
-                Text(
-                  text = if (engine.level % 5 == 0) "👑 MILESTONE!" else "Next: Lv ${engine.level + 1}",
-                  color = if (engine.level % 5 == 0) BentoGold else BentoTextMuted,
-                  fontSize = 9.sp,
-                  fontWeight = FontWeight.Bold
-                )
-              }
-            }
-
-            // Pause Button
-            IconButton(
-              onClick = { viewModel.pauseGame() },
-              modifier = Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(BentoSurface)
-                .border(1.dp, BentoBorder, RoundedCornerShape(10.dp))
-                .testTag("pause_button")
-            ) {
-              Icon(
-                imageVector = Icons.Default.Pause,
-                contentDescription = "Pause Game",
-                tint = BentoAccentIce,
-                modifier = Modifier.size(18.dp)
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(6.dp))
-
-          // HP Bar & Stats Row
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            // HP Bar
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.weight(1f)
-            ) {
-              val hpProgress = (engine.currentHp / engine.maxHp).coerceIn(0f, 1f)
-              Text(text = "❤️", fontSize = 12.sp)
-              Spacer(modifier = Modifier.width(4.dp))
-              Box(
-                modifier = Modifier
-                  .weight(1f)
-                  .height(10.dp)
-                  .clip(RoundedCornerShape(5.dp))
-                  .background(BentoSurfaceHighlight)
-              ) {
-                Box(
-                  modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(hpProgress)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(
-                      if (hpProgress > 0.35f) BentoHealthGreen else BentoHealthRed
-                    )
-                )
-              }
-              Spacer(modifier = Modifier.width(6.dp))
-              Text(
-                text = "${engine.currentHp.toInt()}/${engine.maxHp.toInt()}",
-                color = if (hpProgress > 0.35f) BentoHealthGreen else BentoHealthRed,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-              )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Timer & Kills
-            val minutes = (engine.survivalTimeSec / 60).toInt()
-            val seconds = (engine.survivalTimeSec % 60).toInt()
-            val timeFormatted = String.format("%02d:%02d", minutes, seconds)
-
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-              Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = BentoSurface,
-                border = BorderStroke(1.dp, BentoBorderSubtle)
-              ) {
-                Text(
-                  text = "⏱️ $timeFormatted",
-                  color = BentoAccentIce,
-                  fontSize = 10.sp,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-              }
-
-              Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = BentoSurface,
-                border = BorderStroke(1.dp, BentoBorderSubtle)
-              ) {
-                Text(
-                  text = "💀 ${engine.totalKills}",
-                  color = BentoHealthRed,
-                  fontSize = 10.sp,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-              }
-            }
-          }
-        }
-      }
-
-      // Active Passives & Items Row
-      val hasPassives = engine.activePassives.isNotEmpty()
-      val hasItems = engine.acquiredItems.isNotEmpty() || engine.randomCrystalPurchasedCount > 0
-
-      if (hasPassives || hasItems) {
-        Spacer(modifier = Modifier.height(6.dp))
-        LazyRow(
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          // Items
-          if (engine.acquiredItems.contains(ItemId.PEMULIHAN)) {
-            item {
-              ActiveBadge(text = "💖 Pemulihan (10% HP/s)", color = BentoAccentIce)
-            }
-          }
-          if (engine.randomCrystalPurchasedCount > 0) {
-            item {
-              ActiveBadge(
-                text = "💎 Kristal (${engine.randomCrystalPurchasedCount}x)",
-                color = BentoGold
-              )
-            }
-          }
-          // Passives
-          items(engine.activePassives.entries.toList()) { entry ->
-            ActiveBadge(
-              text = "${entry.key.iconSymbol} Lv${entry.value}",
-              color = entry.key.color
-            )
-          }
-        }
-      }
-    }
+    TopHudOverlay(
+      engine = engine,
+      renderTick = renderTick,
+      onPause = { viewModel.pauseGame() }
+    )
 
     // 3. VIRTUAL JOYSTICK HINT OVERLAY (BOTTOM)
     if (!isJoystickActive && gamePhase == GamePhase.PLAYING) {
@@ -716,4 +512,232 @@ private fun DrawScope.drawArenaGrid(
     size = Size(mapWidth, mapHeight),
     style = Stroke(width = 8f)
   )
+}
+
+@Composable
+private fun TopHudOverlay(
+  engine: com.ehan.mobrush.game.GameEngine,
+  renderTick: Long,
+  onPause: () -> Unit
+) {
+  // Reading renderTick guarantees that TopHudOverlay recomposes continuously on every frame
+  if (renderTick >= 0L) { /* state read for continuous recomposition */ }
+
+  val level = engine.level
+  val currentXp = engine.currentXp
+  val requiredXp = engine.requiredXp
+  val currentHp = engine.currentHp
+  val maxHp = engine.maxHp
+  val survivalTime = engine.survivalTimeSec
+  val kills = engine.totalKills
+
+  Column(
+    modifier = Modifier
+      .fillMaxWidth()
+      .systemBarsPadding()
+      .padding(horizontal = 14.dp, vertical = 8.dp)
+  ) {
+    // Top Status Bento Bar: Level, XP Bar, Timer, Kills, Pause
+    Surface(
+      shape = RoundedCornerShape(20.dp),
+      color = BentoSurfaceElevated.copy(alpha = 0.92f),
+      border = BorderStroke(1.dp, BentoBorder),
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          // Level Badge
+          Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = BentoAccentPrimary
+          ) {
+            Text(
+              text = "LV $level",
+              color = BentoAccentIce,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Black,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+          }
+
+          // XP Progress Bar
+          Column(modifier = Modifier.weight(1f)) {
+            val xpProgress = (currentXp.toFloat() / requiredXp.toFloat()).coerceIn(0f, 1f)
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+                .clip(RoundedCornerShape(5.dp))
+                .background(BentoSurfaceHighlight)
+            ) {
+              Box(
+                modifier = Modifier
+                  .fillMaxHeight()
+                  .fillMaxWidth(xpProgress)
+                  .clip(RoundedCornerShape(5.dp))
+                  .background(
+                    Brush.horizontalGradient(
+                      colors = listOf(BentoAccentPrimary, BentoAccentIce, BentoAccentIceLight)
+                    )
+                  )
+              )
+            }
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+              Text(
+                text = "XP: $currentXp/$requiredXp",
+                color = BentoAccentIce,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+              )
+              Text(
+                text = if (level % 5 == 0) "👑 MILESTONE!" else "Next: Lv ${level + 1}",
+                color = if (level % 5 == 0) BentoGold else BentoTextMuted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+              )
+            }
+          }
+
+          // Pause Button
+          IconButton(
+            onClick = onPause,
+            modifier = Modifier
+              .size(34.dp)
+              .clip(RoundedCornerShape(10.dp))
+              .background(BentoSurface)
+              .border(1.dp, BentoBorder, RoundedCornerShape(10.dp))
+              .testTag("pause_button")
+          ) {
+            Icon(
+              imageVector = Icons.Default.Pause,
+              contentDescription = "Pause Game",
+              tint = BentoAccentIce,
+              modifier = Modifier.size(18.dp)
+            )
+          }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // HP Bar & Stats Row
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          // HP Bar
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+          ) {
+            val hpProgress = (currentHp / maxHp).coerceIn(0f, 1f)
+            Text(text = "❤️", fontSize = 12.sp)
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+              modifier = Modifier
+                .weight(1f)
+                .height(10.dp)
+                .clip(RoundedCornerShape(5.dp))
+                .background(BentoSurfaceHighlight)
+            ) {
+              Box(
+                modifier = Modifier
+                  .fillMaxHeight()
+                  .fillMaxWidth(hpProgress)
+                  .clip(RoundedCornerShape(5.dp))
+                  .background(
+                    if (hpProgress > 0.35f) BentoHealthGreen else BentoHealthRed
+                  )
+              )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "${currentHp.toInt()}/${maxHp.toInt()}",
+              color = if (hpProgress > 0.35f) BentoHealthGreen else BentoHealthRed,
+              fontSize = 10.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+
+          Spacer(modifier = Modifier.width(12.dp))
+
+          // Timer & Kills
+          val minutes = (survivalTime / 60).toInt()
+          val seconds = (survivalTime % 60).toInt()
+          val timeFormatted = String.format("%02d:%02d", minutes, seconds)
+
+          Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = BentoSurface,
+              border = BorderStroke(1.dp, BentoBorderSubtle)
+            ) {
+              Text(
+                text = "⏱️ $timeFormatted",
+                color = BentoAccentIce,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+              )
+            }
+
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = BentoSurface,
+              border = BorderStroke(1.dp, BentoBorderSubtle)
+            ) {
+              Text(
+                text = "💀 $kills",
+                color = BentoHealthRed,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+              )
+            }
+          }
+        }
+      }
+    }
+
+    // Active Passives & Items Row
+    val hasPassives = engine.activePassives.isNotEmpty()
+    val hasItems = engine.acquiredItems.isNotEmpty() || engine.randomCrystalPurchasedCount > 0
+
+    if (hasPassives || hasItems) {
+      Spacer(modifier = Modifier.height(6.dp))
+      LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        // Items
+        if (engine.acquiredItems.contains(ItemId.PEMULIHAN)) {
+          item {
+            ActiveBadge(text = "💖 Pemulihan (10% HP/s)", color = BentoAccentIce)
+          }
+        }
+        if (engine.randomCrystalPurchasedCount > 0) {
+          item {
+            ActiveBadge(
+              text = "💎 Kristal (${engine.randomCrystalPurchasedCount}x)",
+              color = BentoGold
+            )
+          }
+        }
+        // Passives
+        items(engine.activePassives.entries.toList()) { entry ->
+          ActiveBadge(
+            text = "${entry.key.iconSymbol} Lv${entry.value}",
+            color = entry.key.color
+          )
+        }
+      }
+    }
+  }
 }
