@@ -40,16 +40,19 @@ fun MobRushApp(
   viewModel: GameViewModel = viewModel()
 ) {
   val gamePhase by viewModel.gamePhase.collectAsState()
+  val selectedHero by viewModel.selectedHero.collectAsState()
+  val isSfxEnabled by viewModel.isSfxEnabled.collectAsState()
+  val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
 
   when (gamePhase) {
     GamePhase.MAIN_MENU -> {
       MainMenuScreen(
-        selectedHero = viewModel.selectedHero,
+        selectedHero = selectedHero,
         onSelectHero = { hero -> viewModel.selectHero(hero) },
         onStartGame = { viewModel.startNewGame() },
-        isSfxEnabled = viewModel.soundManager.isSfxEnabled,
+        isSfxEnabled = isSfxEnabled,
         onToggleSfx = { viewModel.toggleSfx() },
-        isHapticsEnabled = viewModel.soundManager.isHapticsEnabled,
+        isHapticsEnabled = isHapticsEnabled,
         onToggleHaptics = { viewModel.toggleHaptics() }
       )
     }

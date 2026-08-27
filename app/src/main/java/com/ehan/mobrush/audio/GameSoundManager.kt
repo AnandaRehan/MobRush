@@ -27,8 +27,16 @@ class GameSoundManager(private val context: Context) {
     }
   }
 
-  var isSfxEnabled: Boolean = true
-  var isHapticsEnabled: Boolean = true
+  val isSfxEnabledFlow = kotlinx.coroutines.flow.MutableStateFlow(true)
+  val isHapticsEnabledFlow = kotlinx.coroutines.flow.MutableStateFlow(true)
+
+  var isSfxEnabled: Boolean
+    get() = isSfxEnabledFlow.value
+    set(value) { isSfxEnabledFlow.value = value }
+
+  var isHapticsEnabled: Boolean
+    get() = isHapticsEnabledFlow.value
+    set(value) { isHapticsEnabledFlow.value = value }
 
   private val sampleRate = 22050
 

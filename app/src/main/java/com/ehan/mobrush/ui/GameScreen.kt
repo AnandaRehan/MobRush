@@ -48,6 +48,8 @@ fun GameScreen(
   val skillUpgradeOptions by viewModel.skillUpgradeOptions.collectAsState()
   val itemSelectionOptions by viewModel.itemSelectionOptions.collectAsState()
   val attributeDraftState by viewModel.attributeDraftState.collectAsState()
+  val isSfxEnabled by viewModel.isSfxEnabled.collectAsState()
+  val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsState()
 
   val engine = viewModel.engine
 
@@ -623,9 +625,9 @@ fun GameScreen(
           onResume = { viewModel.resumeGame() },
           onRestart = { viewModel.startNewGame() },
           onQuitToMenu = { viewModel.returnToMenu() },
-          isSfxEnabled = viewModel.soundManager.isSfxEnabled,
+          isSfxEnabled = isSfxEnabled,
           onToggleSfx = { viewModel.toggleSfx() },
-          isHapticsEnabled = viewModel.soundManager.isHapticsEnabled,
+          isHapticsEnabled = isHapticsEnabled,
           onToggleHaptics = { viewModel.toggleHaptics() }
         )
       }

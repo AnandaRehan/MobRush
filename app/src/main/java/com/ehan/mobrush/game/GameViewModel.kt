@@ -8,6 +8,9 @@ import com.ehan.mobrush.model.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -20,8 +23,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   val itemSelectionOptions = engine.itemSelectionOptions
   val attributeDraftState = engine.attributeDraftState
 
-  var selectedHero: HeroConfig = HeroPresets.Knight
-    private set
+  private val _selectedHero = MutableStateFlow<HeroConfig>(HeroPresets.Knight)
+  val selectedHero: StateFlow<HeroConfig> = _selectedHero.asStateFlow()
+
+  val isSfxEnabled: StateFlow<Boolean> = soundManager.isSfxEnabledFlow.asStateFlow()
+  val isHapticsEnabled: StateFlow<Boolean> = soundManager.isHapticsEnabledFlow.asStateFlow()
 
   private var gameLoopJob: Job? = null
 
@@ -30,12 +36,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun selectHero(hero: HeroConfig) {
-    selectedHero = hero
+    _selectedHero.value = hero
     engine.selectHero(hero)
   }
 
   fun startNewGame() {
-    engine.selectHero(selectedHero)
+    engine.selectHero(_selectedHero.value)
     engine.startNewGame()
   }
 
