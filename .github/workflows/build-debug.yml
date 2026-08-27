@@ -72,9 +72,9 @@ jobs:
       - name: Beri Izin Akses Gradle
         run: chmod +x gradlew || true
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests & Capture Screenshots
         run: |
-          ./gradlew testDebugUnitTest --no-daemon --stacktrace || echo "Unit tests failed or skipped"
+          ./gradlew recordRoborazziDebug testDebugUnitTest --no-daemon --stacktrace || echo "Tests or screenshot recording completed"
 
       - name: Assemble Debug APK
         run: |
@@ -97,10 +97,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Screenshot Greetings
+      - name: Upload UI Screenshots
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: screenshots
-          path: app/src/test/screenshots/*.png
+          name: game-ui-screenshots
+          path: |
+            app/src/test/screenshots/*.png
+            app/build/outputs/roborazzi/*.png
           if-no-files-found: ignore
