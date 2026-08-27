@@ -12,9 +12,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -117,7 +117,7 @@ fun MainMenuScreen(
               .border(1.dp, if (isSfxEnabled) BentoAccentIce.copy(alpha = 0.5f) else BentoBorder, RoundedCornerShape(14.dp))
           ) {
             Icon(
-              imageVector = if (isSfxEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+              imageVector = if (isSfxEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
               contentDescription = "Toggle SFX",
               tint = if (isSfxEnabled) BentoAccentIce else BentoTextMuted
             )

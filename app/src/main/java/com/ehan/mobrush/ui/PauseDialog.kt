@@ -4,11 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -78,7 +78,7 @@ fun PauseDialog(
             border = BorderStroke(1.dp, if (isSfxEnabled) BentoAccentIce else BentoBorder)
           ) {
             Icon(
-              imageVector = if (isSfxEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+              imageVector = if (isSfxEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
               contentDescription = null,
               tint = if (isSfxEnabled) BentoAccentIce else BentoTextMuted
             )
