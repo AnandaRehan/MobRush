@@ -5,14 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,15 +33,16 @@ fun ItemSelectDialog(
 ) {
   Dialog(
     onDismissRequest = { /* Must select */ },
-    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)
   ) {
     Surface(
-      shape = RoundedCornerShape(28.dp),
+      shape = RoundedCornerShape(24.dp),
       color = BentoBgDark,
       border = BorderStroke(1.5.dp, BentoBorder),
       modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 8.dp, vertical = 12.dp)
+        .fillMaxWidth(0.92f)
+        .widthIn(max = 760.dp)
+        .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
       Column(
         modifier = Modifier
@@ -54,7 +56,8 @@ fun ItemSelectDialog(
               )
             )
           )
-          .padding(20.dp),
+          .verticalScroll(rememberScrollState())
+          .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         // Top Stage Info & Milestone Badge
@@ -75,7 +78,7 @@ fun ItemSelectDialog(
             color = BentoAccentPrimary
           ) {
             Text(
-              text = "PUSAKA ABADI",
+              text = "PUSAKA MILESTONE",
               color = BentoAccentIce,
               fontSize = 9.sp,
               fontWeight = FontWeight.Bold,
@@ -84,11 +87,11 @@ fun ItemSelectDialog(
           }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-          text = "Pilih Item Baru",
-          style = MaterialTheme.typography.headlineLarge,
+          text = "Pilih Pusaka Abadi",
+          style = MaterialTheme.typography.titleLarge,
           color = BentoTextPrimary,
           fontWeight = FontWeight.Black,
           textAlign = TextAlign.Center
@@ -97,51 +100,36 @@ fun ItemSelectDialog(
         Text(
           text = "Setiap 5 level, pilih satu relik pusaka berkekuatan dahsyat",
           color = BentoTextSecondary,
-          fontSize = 12.sp,
+          fontSize = 11.sp,
           textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = 2.dp, bottom = 16.dp)
+          modifier = Modifier.padding(top = 1.dp, bottom = 10.dp)
         )
 
-        // Bento Grid of Items
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-          val pemulihanItem = availableItems.firstOrNull { it.id == ItemId.PEMULIHAN }
-          val kristalItem = availableItems.firstOrNull { it.id == ItemId.KRISTAL_BERKAT }
+        // Side-by-Side Bento Cards in Landscape
+        val pemulihanItem = availableItems.firstOrNull { it.id == ItemId.PEMULIHAN }
+        val kristalItem = availableItems.firstOrNull { it.id == ItemId.KRISTAL_BERKAT }
 
-          // 1. Featured Bento Item: Pemulihan (if available)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
           if (pemulihanItem != null) {
             FeaturedPemulihanBentoCard(
               item = pemulihanItem,
               onClick = { onSelectItem(pemulihanItem) },
-              modifier = Modifier.testTag("item_option_0")
+              modifier = Modifier
+                .weight(1f)
+                .testTag("item_option_0")
             )
           }
 
-          // 2. Secondary Bento Grid Row
           if (kristalItem != null) {
             KristalBerkatBentoCard(
               item = kristalItem,
               onClick = { onSelectItem(kristalItem) },
-              modifier = Modifier.testTag("item_option_1")
-            )
-          }
-
-          // 3. Decorative Bento Grid Row for extra locked items
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            LockedBentoTile(
-              icon = "⚔️",
-              title = "Pusaka Pedang",
-              modifier = Modifier.weight(1f)
-            )
-            LockedBentoTile(
-              icon = "🛡️",
-              title = "Aegis Abadi",
-              modifier = Modifier.weight(1f)
+              modifier = Modifier
+                .weight(1f)
+                .testTag("item_option_1")
             )
           }
         }
@@ -158,94 +146,76 @@ fun FeaturedPemulihanBentoCard(
 ) {
   Card(
     modifier = modifier
-      .fillMaxWidth()
-      .clip(RoundedCornerShape(24.dp))
+      .clip(RoundedCornerShape(18.dp))
       .clickable { onClick() }
-      .border(2.dp, BentoAccentIce, RoundedCornerShape(24.dp)),
+      .border(2.dp, BentoAccentIce, RoundedCornerShape(18.dp)),
     colors = CardDefaults.cardColors(containerColor = BentoSurfaceElevated)
   ) {
-    Box(
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(16.dp)
+        .padding(12.dp)
     ) {
-      // Watermark in background
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Box(
+          modifier = Modifier
+            .size(38.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(BentoAccentIce),
+          contentAlignment = Alignment.Center
+        ) {
+          Text(text = "❤", color = BentoAccentDark, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = item.name,
+            color = BentoTextPrimary,
+            fontWeight = FontWeight.Black,
+            fontSize = 14.sp
+          )
+          Text(
+            text = "UNIQUE • 1X AMBIL",
+            color = BentoAccentIce,
+            fontWeight = FontWeight.Black,
+            fontSize = 8.sp
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(6.dp))
+
       Text(
-        text = "✚",
-        color = BentoTextPrimary.copy(alpha = 0.05f),
-        fontSize = 72.sp,
-        fontWeight = FontWeight.Black,
-        modifier = Modifier.align(Alignment.TopEnd)
+        text = "Nambah Max HP dan memulihkan 10% Max Nyawa setiap detik.",
+        color = BentoTextSecondary,
+        fontSize = 10.sp,
+        lineHeight = 14.sp
       )
 
-      Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Box(
-            modifier = Modifier
-              .size(48.dp)
-              .clip(RoundedCornerShape(16.dp))
-              .background(BentoAccentIce),
-            contentAlignment = Alignment.Center
-          ) {
-            Text(text = "❤", color = BentoAccentDark, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-          }
+      Spacer(modifier = Modifier.height(8.dp))
 
-          Spacer(modifier = Modifier.width(12.dp))
-
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-              text = item.name,
-              color = BentoTextPrimary,
-              fontWeight = FontWeight.Black,
-              fontSize = 17.sp
-            )
-            Surface(
-              shape = RoundedCornerShape(6.dp),
-              color = BentoAccentPrimary
-            ) {
-              Text(
-                text = "UNIQUE ITEM • 1X AMBIL",
-                color = BentoAccentIce,
-                fontWeight = FontWeight.Black,
-                fontSize = 9.sp,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
         Text(
-          text = "Nambah Max HP dan memulihkan 10% Max Nyawa setiap detik.",
-          color = BentoTextSecondary,
-          fontSize = 12.sp,
-          lineHeight = 16.sp
+          text = "✨ ${item.baseAttributeDescription}",
+          color = BentoAccentIce,
+          fontSize = 10.sp,
+          fontWeight = FontWeight.Bold
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Text(
-            text = "✨ ${item.baseAttributeDescription}",
-            color = BentoAccentIce,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
-          )
-          Text(
-            text = "AMBIL ITEM →",
-            color = BentoAccentIce,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black
-          )
-        }
+        Text(
+          text = "AMBIL →",
+          color = BentoAccentIce,
+          fontSize = 10.sp,
+          fontWeight = FontWeight.Black
+        )
       }
     }
   }
@@ -259,16 +229,15 @@ fun KristalBerkatBentoCard(
 ) {
   Card(
     modifier = modifier
-      .fillMaxWidth()
-      .clip(RoundedCornerShape(24.dp))
+      .clip(RoundedCornerShape(18.dp))
       .clickable { onClick() }
-      .border(1.dp, BentoBorder, RoundedCornerShape(24.dp)),
+      .border(1.dp, BentoGold, RoundedCornerShape(18.dp)),
     colors = CardDefaults.cardColors(containerColor = BentoSurface)
   ) {
     Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(16.dp)
+        .padding(12.dp)
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -276,40 +245,39 @@ fun KristalBerkatBentoCard(
       ) {
         Box(
           modifier = Modifier
-            .size(46.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(BentoSurfaceHighlight)
-            .border(1.dp, BentoBorderSubtle, RoundedCornerShape(14.dp)),
+            .size(38.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(BentoGold),
           contentAlignment = Alignment.Center
         ) {
-          Text(text = "✦", color = BentoAccentIce, fontSize = 22.sp)
+          Text(text = "💎", fontSize = 20.sp)
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
           Text(
             text = item.name,
             color = BentoTextPrimary,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp
+            fontWeight = FontWeight.Black,
+            fontSize = 14.sp
           )
           Text(
-            text = "BEBAS DIBELI TANPA BATAS",
+            text = "DAPAT DIULANG",
             color = BentoGold,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Black,
+            fontSize = 8.sp
           )
         }
       }
 
-      Spacer(modifier = Modifier.height(8.dp))
+      Spacer(modifier = Modifier.height(6.dp))
 
       Text(
-        text = "Pilih 4 atribut acak sebanyak 4 kali pilihan berturut-turut untuk memperkuat hero.",
-        color = BentoTextMuted,
-        fontSize = 11.sp,
-        lineHeight = 15.sp
+        text = "Mendapatkan 3x kesempatan memilih peningkatan atribut acak.",
+        color = BentoTextSecondary,
+        fontSize = 10.sp,
+        lineHeight = 14.sp
       )
 
       Spacer(modifier = Modifier.height(8.dp))
@@ -320,43 +288,18 @@ fun KristalBerkatBentoCard(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Text(
-          text = "💎 4x Pilihan Atribut",
-          color = BentoTextSecondary,
-          fontSize = 11.sp,
-          fontWeight = FontWeight.SemiBold
+          text = "🎲 3x Atribut Acak",
+          color = BentoGold,
+          fontSize = 10.sp,
+          fontWeight = FontWeight.Bold
         )
         Text(
-          text = "AMBIL ITEM →",
-          color = BentoAccentIce,
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Bold
+          text = "AMBIL →",
+          color = BentoGold,
+          fontSize = 10.sp,
+          fontWeight = FontWeight.Black
         )
       }
     }
   }
 }
-
-@Composable
-fun LockedBentoTile(
-  icon: String,
-  title: String,
-  modifier: Modifier = Modifier
-) {
-  Surface(
-    shape = RoundedCornerShape(18.dp),
-    color = BentoSurface.copy(alpha = 0.5f),
-    border = BorderStroke(1.dp, BentoBorderSubtle),
-    modifier = modifier
-  ) {
-    Column(
-      modifier = Modifier.padding(12.dp),
-      horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-      Text(text = icon, fontSize = 20.sp, color = BentoTextMuted)
-      Spacer(modifier = Modifier.height(4.dp))
-      Text(text = title, color = BentoTextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-      Text(text = "LOCKED", color = BentoTextMuted.copy(alpha = 0.6f), fontSize = 8.sp, fontWeight = FontWeight.Black)
-    }
-  }
-}
-

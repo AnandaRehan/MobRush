@@ -3,7 +3,9 @@ package com.ehan.mobrush.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
@@ -11,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -38,15 +39,16 @@ fun GameOverDialog(
 
   Dialog(
     onDismissRequest = { /* Must choose action */ },
-    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)
   ) {
     Surface(
-      shape = RoundedCornerShape(28.dp),
+      shape = RoundedCornerShape(24.dp),
       color = BentoBgDark,
       border = BorderStroke(1.5.dp, BentoBorder),
       modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 8.dp, vertical = 12.dp)
+        .fillMaxWidth(0.92f)
+        .widthIn(max = 680.dp)
+        .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
       Column(
         modifier = Modifier
@@ -60,151 +62,140 @@ fun GameOverDialog(
               )
             )
           )
-          .padding(20.dp),
+          .verticalScroll(rememberScrollState())
+          .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         Surface(
-          shape = RoundedCornerShape(8.dp),
+          shape = RoundedCornerShape(6.dp),
           color = BentoAccentPrimary
         ) {
           Text(
             text = "PERTEMPURAN BERAKHIR",
             color = BentoAccentIce,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
           )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
           text = "Hasil Ekspedisi",
-          style = MaterialTheme.typography.headlineLarge,
+          style = MaterialTheme.typography.titleLarge,
           color = BentoTextPrimary,
           fontWeight = FontWeight.Black,
           textAlign = TextAlign.Center
         )
 
-        Text(
-          text = "Pahlawanmu telah berjuang gagah berani di arena!",
-          color = BentoTextSecondary,
-          fontSize = 12.sp,
-          textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // 2x2 Bento Stat Tiles
+        // 4 Bento Stat Tiles in a Single Row (or 2x2)
         Row(
           modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
           BentoStatBox(
-            label = "Waktu Bertahan",
+            label = "Waktu",
             value = timeFormatted,
             valueColor = BentoAccentIce,
             modifier = Modifier.weight(1f)
           )
           BentoStatBox(
-            label = "Musuh Dibasmi",
+            label = "Musuh",
             value = "${statistics.totalKills}",
             valueColor = BentoHealthRed,
             modifier = Modifier.weight(1f)
           )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
           BentoStatBox(
-            label = "Tingkat Level",
+            label = "Level",
             value = "Lv. ${statistics.highestLevel}",
             valueColor = BentoGold,
             modifier = Modifier.weight(1f)
           )
           BentoStatBox(
-            label = "Permata XP",
+            label = "XP Gem",
             value = "${statistics.gemsCollected}",
             valueColor = BentoAccentIceLight,
             modifier = Modifier.weight(1f)
           )
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Relik summary bento banner
         Surface(
-          shape = RoundedCornerShape(16.dp),
+          shape = RoundedCornerShape(14.dp),
           color = BentoSurface,
           border = BorderStroke(1.dp, BentoBorderSubtle),
           modifier = Modifier.fillMaxWidth()
         ) {
-          Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Text(text = "💖 Pemulihan", color = BentoTextSecondary, fontSize = 11.sp)
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(text = "💖 Pemulihan: ", color = BentoTextSecondary, fontSize = 10.sp)
               Text(
-                text = if (hasPemulihanItem) "Aktif (10% HP/s)" else "Belum",
+                text = if (hasPemulihanItem) "Aktif" else "Tidak",
                 color = if (hasPemulihanItem) BentoAccentIce else BentoTextMuted,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
               )
             }
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Text(text = "💎 Kristal Berkat", color = BentoTextSecondary, fontSize = 11.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(text = "💎 Kristal Berkat: ", color = BentoTextSecondary, fontSize = 10.sp)
               Text(
-                text = if (crystalDraftsCount > 0) "$crystalDraftsCount Kali (${crystalDraftsCount * 4} Atribut)" else "0 Kali",
+                text = if (crystalDraftsCount > 0) "$crystalDraftsCount Kali (${crystalDraftsCount * 4} Stat)" else "0 Kali",
                 color = if (crystalDraftsCount > 0) BentoGold else BentoTextMuted,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
               )
             }
           }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Buttons
-        Button(
-          onClick = onPlayAgain,
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .testTag("play_again_button"),
-          shape = RoundedCornerShape(16.dp),
-          colors = ButtonDefaults.buttonColors(
-            containerColor = BentoAccentIce,
-            contentColor = BentoAccentDark
-          )
+        // Action Buttons Row
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = BentoAccentDark)
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(text = "MAIN LAGI", fontSize = 14.sp, fontWeight = FontWeight.Black)
-        }
+          Button(
+            onClick = onPlayAgain,
+            modifier = Modifier
+              .weight(1f)
+              .height(44.dp)
+              .testTag("play_again_button"),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+              containerColor = BentoAccentIce,
+              contentColor = BentoAccentDark
+            )
+          ) {
+            Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = BentoAccentDark, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(text = "MAIN LAGI", fontSize = 12.sp, fontWeight = FontWeight.Black)
+          }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedButton(
-          onClick = onReturnToMenu,
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .testTag("game_over_menu_button"),
-          shape = RoundedCornerShape(16.dp),
-          border = BorderStroke(1.dp, BentoBorder),
-          colors = ButtonDefaults.outlinedButtonColors(contentColor = BentoTextPrimary)
-        ) {
-          Icon(imageVector = Icons.Default.Home, contentDescription = null, tint = BentoTextSecondary)
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(text = "MENU UTAMA", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+          OutlinedButton(
+            onClick = onReturnToMenu,
+            modifier = Modifier
+              .weight(1f)
+              .height(44.dp)
+              .testTag("game_over_menu_button"),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, BentoBorder),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = BentoTextPrimary)
+          ) {
+            Icon(imageVector = Icons.Default.Home, contentDescription = null, tint = BentoTextSecondary, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(text = "MENU UTAMA", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          }
         }
       }
     }
@@ -219,19 +210,18 @@ fun BentoStatBox(
   modifier: Modifier = Modifier
 ) {
   Surface(
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(14.dp),
     color = BentoSurface,
     border = BorderStroke(1.dp, BentoBorderSubtle),
     modifier = modifier
   ) {
     Column(
-      modifier = Modifier.padding(12.dp),
+      modifier = Modifier.padding(8.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      Text(text = value, color = valueColor, fontSize = 16.sp, fontWeight = FontWeight.Black)
+      Text(text = value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.Black)
       Spacer(modifier = Modifier.height(2.dp))
-      Text(text = label, color = BentoTextMuted, fontSize = 10.sp)
+      Text(text = label, color = BentoTextMuted, fontSize = 9.sp)
     }
   }
 }
-

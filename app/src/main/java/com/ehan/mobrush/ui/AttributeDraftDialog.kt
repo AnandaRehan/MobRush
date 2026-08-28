@@ -5,14 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,15 +32,16 @@ fun AttributeDraftDialog(
 ) {
   Dialog(
     onDismissRequest = { /* Must finish draft */ },
-    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)
   ) {
     Surface(
-      shape = RoundedCornerShape(28.dp),
+      shape = RoundedCornerShape(24.dp),
       color = BentoBgDark,
       border = BorderStroke(1.5.dp, BentoBorder),
       modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 8.dp, vertical = 12.dp)
+        .fillMaxWidth(0.92f)
+        .widthIn(max = 760.dp)
+        .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
       Column(
         modifier = Modifier
@@ -53,7 +55,8 @@ fun AttributeDraftDialog(
               )
             )
           )
-          .padding(20.dp),
+          .verticalScroll(rememberScrollState())
+          .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         // Step indicator badge
@@ -83,11 +86,11 @@ fun AttributeDraftDialog(
           }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
           text = "Pilih 1 Atribut Acak",
-          style = MaterialTheme.typography.headlineLarge,
+          style = MaterialTheme.typography.titleLarge,
           color = BentoTextPrimary,
           fontWeight = FontWeight.Black,
           textAlign = TextAlign.Center
@@ -96,20 +99,23 @@ fun AttributeDraftDialog(
         Text(
           text = "Pilihan ke-${draftState.currentStep} dari ${draftState.totalSteps} atribut acak",
           color = BentoTextSecondary,
-          fontSize = 12.sp,
+          fontSize = 11.sp,
           textAlign = TextAlign.Center,
-          modifier = Modifier.padding(top = 2.dp, bottom = 16.dp)
+          modifier = Modifier.padding(top = 1.dp, bottom = 10.dp)
         )
 
-        Column(
+        // Cards displayed in a horizontal Row in Landscape!
+        Row(
           modifier = Modifier.fillMaxWidth(),
-          verticalArrangement = Arrangement.spacedBy(10.dp)
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
           draftState.currentOptions.forEachIndexed { index, option ->
             AttributeBentoCard(
               option = option,
               onClick = { onSelectOption(option) },
-              modifier = Modifier.testTag("draft_attribute_$index")
+              modifier = Modifier
+                .weight(1f)
+                .testTag("draft_attribute_$index")
             )
           }
         }
@@ -126,49 +132,49 @@ fun AttributeBentoCard(
 ) {
   Card(
     modifier = modifier
-      .fillMaxWidth()
-      .clip(RoundedCornerShape(20.dp))
+      .clip(RoundedCornerShape(18.dp))
       .clickable { onClick() }
-      .border(1.dp, BentoBorder, RoundedCornerShape(20.dp)),
+      .border(1.dp, BentoBorder, RoundedCornerShape(18.dp)),
     colors = CardDefaults.cardColors(containerColor = BentoSurface)
   ) {
-    Row(
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(14.dp),
-      verticalAlignment = Alignment.CenterVertically
+        .padding(10.dp),
+      horizontalAlignment = Alignment.CenterHorizontally
     ) {
       Box(
         modifier = Modifier
-          .size(46.dp)
-          .clip(RoundedCornerShape(14.dp))
+          .size(42.dp)
+          .clip(RoundedCornerShape(12.dp))
           .background(BentoSurfaceHighlight)
-          .border(1.dp, BentoBorderSubtle, RoundedCornerShape(14.dp)),
+          .border(1.dp, BentoBorderSubtle, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
       ) {
-        Text(text = option.iconSymbol, fontSize = 22.sp)
+        Text(text = option.iconSymbol, fontSize = 20.sp)
       }
 
-      Spacer(modifier = Modifier.width(12.dp))
+      Spacer(modifier = Modifier.height(6.dp))
 
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-          text = option.displayName,
-          color = BentoTextPrimary,
-          fontWeight = FontWeight.Bold,
-          fontSize = 14.sp
-        )
+      Text(
+        text = option.displayName,
+        color = BentoTextPrimary,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp,
+        textAlign = TextAlign.Center
+      )
 
-        Spacer(modifier = Modifier.height(2.dp))
+      Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
-          text = option.effectDescription,
-          color = BentoAccentIce,
-          fontSize = 11.sp,
-          fontWeight = FontWeight.Medium
-        )
-      }
+      Text(
+        text = option.effectDescription,
+        color = BentoAccentIce,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Medium,
+        textAlign = TextAlign.Center,
+        lineHeight = 13.sp,
+        modifier = Modifier.fillMaxWidth()
+      )
     }
   }
 }
-
