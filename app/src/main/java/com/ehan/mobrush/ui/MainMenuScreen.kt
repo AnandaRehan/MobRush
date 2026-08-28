@@ -13,7 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.ehan.mobrush.model.HeroConfig
 import com.ehan.mobrush.model.HeroPresets
 import com.ehan.mobrush.ui.theme.*
@@ -42,10 +47,13 @@ fun MainMenuScreen(
   isHapticsEnabled: Boolean,
   onToggleHaptics: () -> Unit
 ) {
+  var showHeroSelectDialog by remember { mutableStateOf(false) }
+  var showSettingsDialog by remember { mutableStateOf(false) }
+
   val infiniteTransition = rememberInfiniteTransition(label = "menu_pulse")
   val pulseScale by infiniteTransition.animateFloat(
     initialValue = 1f,
-    targetValue = 1.03f,
+    targetValue = 1.025f,
     animationSpec = infiniteRepeatable(
       animation = tween(1100, easing = FastOutSlowInEasing),
       repeatMode = RepeatMode.Reverse
@@ -71,185 +79,496 @@ fun MainMenuScreen(
     Row(
       modifier = Modifier
         .fillMaxSize()
-        .padding(horizontal = 20.dp, vertical = 12.dp),
-      horizontalArrangement = Arrangement.spacedBy(16.dp)
+        .padding(horizontal = 24.dp, vertical = 14.dp),
+      horizontalArrangement = Arrangement.spacedBy(20.dp),
+      verticalAlignment = Alignment.CenterVertically
     ) {
-      // LEFT COLUMN: Header, Hero Cards & Launch Button
+      // LEFT COLUMN: Game Branding + Active Hero Indicator Card
       Column(
         modifier = Modifier
-          .weight(1f)
+          .weight(1.15f)
           .fillMaxHeight()
           .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.SpaceBetween
       ) {
+        // App Title & Tagline
         Column {
-          // Top Header & Sound Toggles
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
-              shape = RoundedCornerShape(14.dp),
-              color = BentoSurfaceElevated,
-              border = BorderStroke(1.dp, BentoBorder)
+              shape = RoundedCornerShape(10.dp),
+              color = BentoAccentPrimary
+            ) {
+              Text(
+                text = "SURVIVAL ARENA",
+                color = BentoAccentIce,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 0.5.sp,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(4.dp))
+
+          Text(
+            text = "MOB RUSH",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Black,
+            color = BentoTextPrimary,
+            letterSpacing = 1.sp
+          )
+
+          Text(
+            text = "Roguelike Action Survival • Lawan Serbuan Monster & Kumpulkan Relik",
+            fontSize = 10.sp,
+            color = BentoTextSecondary,
+            lineHeight = 14.sp
+          )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // PENANDA HERO AKTIF (Showcase Card)
+        ActiveHeroShowcaseCard(
+          hero = selectedHero,
+          onChangeHeroClick = { showHeroSelectDialog = true }
+        )
+      }
+
+      // RIGHT COLUMN: Menu Action Buttons (Mulai, Pilih Hero, Pengaturan)
+      Column(
+        modifier = Modifier
+          .weight(0.95f)
+          .fillMaxHeight()
+          .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+      ) {
+        Surface(
+          shape = RoundedCornerShape(22.dp),
+          color = BentoSurfaceElevated,
+          border = BorderStroke(1.dp, BentoBorder),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Text(
+              text = "MENU UTAMA",
+              color = BentoAccentIce,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Black,
+              letterSpacing = 0.5.sp
+            )
+
+            // 1. TOMBOL MULAI PERMAINAN (Primary Glowing Button)
+            Button(
+              onClick = onStartGame,
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp)
+                .scale(pulseScale)
+                .testTag("start_game_button"),
+              shape = RoundedCornerShape(16.dp),
+              colors = ButtonDefaults.buttonColors(
+                containerColor = BentoAccentIce,
+                contentColor = BentoAccentDark
+              ),
+              elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
             ) {
               Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
               ) {
-                Box(
-                  modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(BentoAccentIce)
+                Icon(
+                  imageVector = Icons.Default.PlayArrow,
+                  contentDescription = null,
+                  tint = BentoAccentDark,
+                  modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                  text = "MOB RUSH ARENA",
-                  color = BentoAccentIce,
-                  fontSize = 11.sp,
-                  fontWeight = FontWeight.Bold,
+                  text = "MULAI PERMAINAN",
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Black,
                   letterSpacing = 0.5.sp
                 )
               }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-              IconButton(
-                onClick = onToggleSfx,
-                modifier = Modifier
-                  .size(36.dp)
-                  .clip(RoundedCornerShape(12.dp))
-                  .background(BentoSurface)
-                  .border(1.dp, if (isSfxEnabled) BentoAccentIce.copy(alpha = 0.5f) else BentoBorder, RoundedCornerShape(12.dp))
+            // 2. TOMBOL PILIH HERO
+            OutlinedButton(
+              onClick = { showHeroSelectDialog = true },
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .testTag("menu_select_hero_button"),
+              shape = RoundedCornerShape(14.dp),
+              border = BorderStroke(1.2.dp, BentoBorder),
+              colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = BentoSurface,
+                contentColor = BentoTextPrimary
+              )
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
               ) {
                 Icon(
-                  imageVector = if (isSfxEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                  contentDescription = "Toggle SFX",
-                  tint = if (isSfxEnabled) BentoAccentIce else BentoTextMuted,
-                  modifier = Modifier.size(18.dp)
+                  imageVector = Icons.Default.Person,
+                  contentDescription = null,
+                  tint = BentoAccentIce,
+                  modifier = Modifier.size(20.dp)
                 )
-              }
-
-              IconButton(
-                onClick = onToggleHaptics,
-                modifier = Modifier
-                  .size(36.dp)
-                  .clip(RoundedCornerShape(12.dp))
-                  .background(BentoSurface)
-                  .border(1.dp, if (isHapticsEnabled) BentoAccentIce.copy(alpha = 0.5f) else BentoBorder, RoundedCornerShape(12.dp))
-              ) {
-                Icon(
-                  imageVector = Icons.Default.Vibration,
-                  contentDescription = "Toggle Haptics",
-                  tint = if (isHapticsEnabled) BentoAccentIce else BentoTextMuted,
-                  modifier = Modifier.size(18.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                    text = "Pilih Hero",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BentoTextPrimary
+                  )
+                  Text(
+                    text = "Ganti karakter aktif (${selectedHero.name})",
+                    fontSize = 9.sp,
+                    color = BentoTextMuted
+                  )
+                }
+                Text(
+                  text = "UBAH →",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Black,
+                  color = BentoAccentIce
                 )
               }
             }
-          }
 
-          Spacer(modifier = Modifier.height(10.dp))
-
-          // Hero Select Section Title
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Text(
-              text = "PILIH HERO",
-              color = BentoTextPrimary,
-              fontSize = 12.sp,
-              fontWeight = FontWeight.ExtraBold,
-              letterSpacing = 0.5.sp
-            )
-            Text(
-              text = "ROGUELIKE ACTION",
-              color = BentoAccentIce,
-              fontSize = 10.sp,
-              fontWeight = FontWeight.Bold
-            )
-          }
-
-          Spacer(modifier = Modifier.height(8.dp))
-
-          // 2 Hero Cards side-by-side
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            HeroPresets.allHeroes.forEach { hero ->
-              val isSelected = hero.id == selectedHero.id
-              HeroBentoCard(
-                hero = hero,
-                isSelected = isSelected,
-                onClick = { onSelectHero(hero) },
-                modifier = Modifier.weight(1f)
+            // 3. TOMBOL PENGATURAN
+            OutlinedButton(
+              onClick = { showSettingsDialog = true },
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .testTag("menu_settings_button"),
+              shape = RoundedCornerShape(14.dp),
+              border = BorderStroke(1.2.dp, BentoBorder),
+              colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = BentoSurface,
+                contentColor = BentoTextPrimary
               )
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Settings,
+                  contentDescription = null,
+                  tint = BentoAccentIce,
+                  modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                    text = "Pengaturan",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BentoTextPrimary
+                  )
+                  Text(
+                    text = "Suara, Getaran & Panduan",
+                    fontSize = 9.sp,
+                    color = BentoTextMuted
+                  )
+                }
+                Text(
+                  text = "BUKA →",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Black,
+                  color = BentoAccentIce
+                )
+              }
             }
           }
         }
+      }
+    }
 
-        Spacer(modifier = Modifier.height(10.dp))
+    // DIALOG PILIH HERO
+    if (showHeroSelectDialog) {
+      HeroSelectModalDialog(
+        currentHero = selectedHero,
+        onSelectHero = { hero ->
+          onSelectHero(hero)
+          showHeroSelectDialog = false
+        },
+        onDismiss = { showHeroSelectDialog = false }
+      )
+    }
 
-        // Start Action Button
-        Button(
-          onClick = onStartGame,
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .scale(pulseScale)
-            .testTag("start_game_button"),
-          shape = RoundedCornerShape(16.dp),
-          colors = ButtonDefaults.buttonColors(
-            containerColor = BentoAccentIce,
-            contentColor = BentoAccentDark
-          ),
-          elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+    // DIALOG PENGATURAN
+    if (showSettingsDialog) {
+      SettingsModalDialog(
+        isSfxEnabled = isSfxEnabled,
+        onToggleSfx = onToggleSfx,
+        isHapticsEnabled = isHapticsEnabled,
+        onToggleHaptics = onToggleHaptics,
+        onDismiss = { showSettingsDialog = false }
+      )
+    }
+  }
+}
+
+/**
+ * Penanda Hero Aktif (Active Hero Indicator Card)
+ */
+@Composable
+fun ActiveHeroShowcaseCard(
+  hero: HeroConfig,
+  onChangeHeroClick: () -> Unit
+) {
+  Surface(
+    shape = RoundedCornerShape(20.dp),
+    color = BentoSurfaceElevated,
+    border = BorderStroke(1.5.dp, BentoAccentIce.copy(alpha = 0.6f)),
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    Column(modifier = Modifier.padding(12.dp)) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Surface(
+          shape = RoundedCornerShape(8.dp),
+          color = BentoAccentPrimary
         ) {
           Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Icon(
-              imageVector = Icons.Default.PlayArrow,
-              contentDescription = null,
-              tint = BentoAccentDark,
-              modifier = Modifier.size(24.dp)
+            Box(
+              modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(BentoAccentIce)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "MULAI PERTEMPURAN",
-              fontSize = 15.sp,
+              text = "HERO AKTIF SAAT INI",
+              color = BentoAccentIce,
+              fontSize = 9.sp,
               fontWeight = FontWeight.Black,
               letterSpacing = 0.5.sp
             )
           }
         }
+
+        TextButton(
+          onClick = onChangeHeroClick,
+          contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+          Text(
+            text = "Ganti Hero",
+            color = BentoAccentIce,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+          )
+        }
       }
 
-      // RIGHT COLUMN: Selected Hero Detail & Bento Guide
-      Column(
-        modifier = Modifier
-          .weight(1.1f)
-          .fillMaxHeight()
-          .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        // Selected Hero Specs & Stats
-        SelectedHeroBentoDetail(hero = selectedHero)
+      Spacer(modifier = Modifier.height(6.dp))
 
-        // Game System Mechanics Guide
-        GameMechanicsBentoGuide()
+      // Hero Profile Row
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Box(
+          modifier = Modifier
+            .size(46.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(BentoAccentPrimary)
+            .border(1.5.dp, BentoAccentIce, RoundedCornerShape(14.dp)),
+          contentAlignment = Alignment.Center
+        ) {
+          Text(
+            text = if (hero.id == HeroPresets.Knight.id) "🗡️" else "🏹",
+            fontSize = 22.sp
+          )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = hero.name,
+            color = BentoTextPrimary,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black
+          )
+          Text(
+            text = "${hero.title} • ⚡ ${hero.weaponName}",
+            color = BentoAccentIce,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      // Quick 4 Stats Grid
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        BentoQuickStat(label = "HP", value = "${hero.baseMaxHp.toInt()}", color = BentoHealthRed, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "ATK", value = "${hero.baseAttackDamage.toInt()}", color = BentoAccentIce, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "SPD", value = "${hero.baseSpeed.toInt()}", color = BentoAccentIceLight, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "CRIT", value = "${(hero.baseCritRate * 100).toInt()}%", color = BentoGold, modifier = Modifier.weight(1f))
       }
     }
   }
 }
 
 @Composable
-fun HeroBentoCard(
+fun BentoQuickStat(
+  label: String,
+  value: String,
+  color: Color,
+  modifier: Modifier = Modifier
+) {
+  Surface(
+    shape = RoundedCornerShape(10.dp),
+    color = BentoSurface,
+    border = BorderStroke(1.dp, BentoBorderSubtle),
+    modifier = modifier
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+      horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+      Text(text = value, color = color, fontSize = 11.sp, fontWeight = FontWeight.Black)
+      Text(text = label, color = BentoTextMuted, fontSize = 8.sp)
+    }
+  }
+}
+
+/**
+ * Dialog Pemilihan Hero (Dedicated Hero Selection Modal)
+ */
+@Composable
+fun HeroSelectModalDialog(
+  currentHero: HeroConfig,
+  onSelectHero: (HeroConfig) -> Unit,
+  onDismiss: () -> Unit
+) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)
+  ) {
+    Surface(
+      shape = RoundedCornerShape(24.dp),
+      color = BentoBgDark,
+      border = BorderStroke(1.5.dp, BentoBorder),
+      modifier = Modifier
+        .fillMaxWidth(0.92f)
+        .widthIn(max = 720.dp)
+        .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(
+            Brush.verticalGradient(
+              colors = listOf(
+                BentoSurfaceElevated,
+                BentoBgDark,
+                BentoBgBlack
+              )
+            )
+          )
+          .verticalScroll(rememberScrollState())
+          .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+      ) {
+        // Top Header Row
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = BentoAccentPrimary
+          ) {
+            Text(
+              text = "PILIH HERO KARAKTER",
+              color = BentoAccentIce,
+              fontSize = 9.sp,
+              fontWeight = FontWeight.Black,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            )
+          }
+
+          IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.size(32.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Close,
+              contentDescription = "Tutup",
+              tint = BentoTextSecondary,
+              modifier = Modifier.size(18.dp)
+            )
+          }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+          text = "Tentukan Karakter Pertempuran",
+          style = MaterialTheme.typography.titleLarge,
+          color = BentoTextPrimary,
+          fontWeight = FontWeight.Black,
+          textAlign = TextAlign.Center
+        )
+
+        Text(
+          text = "Setiap hero memiliki senjata unik, jangkauan serang, dan kecepatan yang berbeda",
+          color = BentoTextSecondary,
+          fontSize = 11.sp,
+          textAlign = TextAlign.Center,
+          modifier = Modifier.padding(top = 1.dp, bottom = 12.dp)
+        )
+
+        // 2 Hero Selection Bento Cards Side-by-Side
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          HeroPresets.allHeroes.forEach { hero ->
+            val isSelected = hero.id == currentHero.id
+            HeroSelectBentoOptionCard(
+              hero = hero,
+              isSelected = isSelected,
+              onClick = { onSelectHero(hero) },
+              modifier = Modifier.weight(1f)
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun HeroSelectBentoOptionCard(
   hero: HeroConfig,
   isSelected: Boolean,
   onClick: () -> Unit,
@@ -272,12 +591,12 @@ fun HeroBentoCard(
     Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(10.dp),
+        .padding(12.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
       Box(
         modifier = Modifier
-          .size(42.dp)
+          .size(46.dp)
           .clip(RoundedCornerShape(14.dp))
           .background(if (isSelected) BentoAccentPrimary else BentoSurfaceHighlight)
           .border(
@@ -289,7 +608,7 @@ fun HeroBentoCard(
       ) {
         Text(
           text = if (hero.id == HeroPresets.Knight.id) "🗡️" else "🏹",
-          fontSize = 20.sp
+          fontSize = 22.sp
         )
       }
 
@@ -299,7 +618,7 @@ fun HeroBentoCard(
         text = hero.name,
         color = BentoTextPrimary,
         fontWeight = FontWeight.Bold,
-        fontSize = 13.sp,
+        fontSize = 14.sp,
         textAlign = TextAlign.Center
       )
 
@@ -313,199 +632,220 @@ fun HeroBentoCard(
 
       Spacer(modifier = Modifier.height(6.dp))
 
-      Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = if (isSelected) BentoAccentPrimary else BentoSurfaceHighlight
+      Text(
+        text = "⚡ ${hero.weaponName}",
+        color = BentoAccentIce,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold
+      )
+
+      Text(
+        text = hero.attackTypeDescription,
+        color = BentoTextMuted,
+        fontSize = 9.sp,
+        textAlign = TextAlign.Center,
+        lineHeight = 12.sp,
+        modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
+      )
+
+      // Stats 2x2 or row
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+      ) {
+        BentoQuickStat(label = "HP", value = "${hero.baseMaxHp.toInt()}", color = BentoHealthRed, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "ATK", value = "${hero.baseAttackDamage.toInt()}", color = BentoAccentIce, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "SPD", value = "${hero.baseSpeed.toInt()}", color = BentoAccentIceLight, modifier = Modifier.weight(1f))
+        BentoQuickStat(label = "CRIT", value = "${(hero.baseCritRate * 100).toInt()}%", color = BentoGold, modifier = Modifier.weight(1f))
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Button(
+        onClick = onClick,
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(38.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = if (isSelected) BentoAccentIce else BentoSurfaceHighlight,
+          contentColor = if (isSelected) BentoAccentDark else BentoTextPrimary
+        )
       ) {
         Text(
-          text = if (isSelected) "AKTIF" else "PILIH",
-          color = if (isSelected) BentoAccentIce else BentoTextMuted,
-          fontSize = 9.sp,
-          fontWeight = FontWeight.ExtraBold,
-          modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+          text = if (isSelected) "✓ SEDANG DIPILIH" else "PILIH HERO INI",
+          fontWeight = FontWeight.Black,
+          fontSize = 11.sp
         )
       }
     }
   }
 }
 
+/**
+ * Dialog Pengaturan (Settings Modal Dialog)
+ */
 @Composable
-fun SelectedHeroBentoDetail(hero: HeroConfig) {
-  Surface(
-    shape = RoundedCornerShape(20.dp),
-    color = BentoSurfaceElevated,
-    border = BorderStroke(1.dp, BentoBorder),
-    modifier = Modifier.fillMaxWidth()
-  ) {
-    Column(modifier = Modifier.padding(12.dp)) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Text(
-            text = "⚡ Senjata: ${hero.weaponName}",
-            color = BentoAccentIce,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp
-          )
-        }
-        Surface(
-          shape = RoundedCornerShape(6.dp),
-          color = BentoAccentPrimary
-        ) {
-          Text(
-            text = hero.attackTypeDescription,
-            color = BentoAccentIce,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-          )
-        }
-      }
-
-      Spacer(modifier = Modifier.height(8.dp))
-
-      // 4-Tile Bento Stat Grid
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-      ) {
-        BentoStatTile(
-          icon = "❤️",
-          label = "Max HP",
-          value = "${hero.baseMaxHp.toInt()}",
-          valueColor = BentoHealthRed,
-          modifier = Modifier.weight(1f)
-        )
-        BentoStatTile(
-          icon = "⚔️",
-          label = "Serang",
-          value = "${hero.baseAttackDamage.toInt()}",
-          valueColor = BentoAccentIce,
-          modifier = Modifier.weight(1f)
-        )
-        BentoStatTile(
-          icon = "⚡",
-          label = "Speed",
-          value = "${hero.baseSpeed.toInt()}",
-          valueColor = BentoAccentIceLight,
-          modifier = Modifier.weight(1f)
-        )
-        BentoStatTile(
-          icon = "💥",
-          label = "Kritis",
-          value = "${(hero.baseCritRate * 100).toInt()}%",
-          valueColor = BentoGold,
-          modifier = Modifier.weight(1f)
-        )
-      }
-    }
-  }
-}
-
-@Composable
-fun BentoStatTile(
-  icon: String,
-  label: String,
-  value: String,
-  valueColor: Color,
-  modifier: Modifier = Modifier
+fun SettingsModalDialog(
+  isSfxEnabled: Boolean,
+  onToggleSfx: () -> Unit,
+  isHapticsEnabled: Boolean,
+  onToggleHaptics: () -> Unit,
+  onDismiss: () -> Unit
 ) {
-  Surface(
-    shape = RoundedCornerShape(12.dp),
-    color = BentoSurface,
-    border = BorderStroke(1.dp, BentoBorderSubtle),
-    modifier = modifier
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)
   ) {
-    Column(
-      modifier = Modifier.padding(6.dp),
-      horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+      shape = RoundedCornerShape(24.dp),
+      color = BentoBgDark,
+      border = BorderStroke(1.5.dp, BentoBorder),
+      modifier = Modifier
+        .fillMaxWidth(0.85f)
+        .widthIn(max = 560.dp)
+        .padding(horizontal = 8.dp, vertical = 6.dp)
     ) {
-      Text(text = icon, fontSize = 11.sp)
-      Spacer(modifier = Modifier.height(2.dp))
-      Text(text = value, color = valueColor, fontSize = 12.sp, fontWeight = FontWeight.Black)
-      Text(text = label, color = BentoTextMuted, fontSize = 8.sp)
-    }
-  }
-}
-
-@Composable
-fun GameMechanicsBentoGuide() {
-  Surface(
-    shape = RoundedCornerShape(20.dp),
-    color = BentoSurface,
-    border = BorderStroke(1.dp, BentoBorder),
-    modifier = Modifier.fillMaxWidth()
-  ) {
-    Column(modifier = Modifier.padding(12.dp)) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Text(
-          text = "PANDUAN ARENA ROGUELIKE",
-          color = BentoAccentIce,
-          fontWeight = FontWeight.Bold,
-          fontSize = 11.sp,
-          letterSpacing = 0.5.sp
-        )
-        Surface(
-          shape = RoundedCornerShape(6.dp),
-          color = BentoSurfaceHighlight
-        ) {
-          Text(
-            text = "BENTO",
-            color = BentoTextMuted,
-            fontSize = 8.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(
+            Brush.verticalGradient(
+              colors = listOf(
+                BentoSurfaceElevated,
+                BentoBgDark,
+                BentoBgBlack
+              )
+            )
           )
-        }
-      }
-
-      Spacer(modifier = Modifier.height(8.dp))
-
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+          .verticalScroll(rememberScrollState())
+          .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Surface(
-          shape = RoundedCornerShape(12.dp),
-          color = BentoSurfaceElevated,
-          border = BorderStroke(1.dp, BentoBorderSubtle),
-          modifier = Modifier.weight(1f)
+        // Header
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = "⭐ Level Biasa", color = BentoAccentIce, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(3.dp))
+          Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = BentoAccentPrimary
+          ) {
             Text(
-              text = "Pilih 3 Skill Pasif acak atau tingkatkan level skill hingga Lv 5.",
-              color = BentoTextSecondary,
+              text = "PENGATURAN GAME",
+              color = BentoAccentIce,
               fontSize = 9.sp,
-              lineHeight = 13.sp
+              fontWeight = FontWeight.Black,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            )
+          }
+
+          IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.size(32.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Close,
+              contentDescription = "Tutup",
+              tint = BentoTextSecondary,
+              modifier = Modifier.size(18.dp)
             )
           }
         }
 
-        Surface(
-          shape = RoundedCornerShape(12.dp),
-          color = BentoSurfaceElevated,
-          border = BorderStroke(1.dp, BentoBorderSubtle),
-          modifier = Modifier.weight(1f)
+        Text(
+          text = "Audio & Kontrol",
+          style = MaterialTheme.typography.titleLarge,
+          color = BentoTextPrimary,
+          fontWeight = FontWeight.Black
+        )
+
+        // SFX & Haptics Toggles
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = "👑 Tiap 5 Level", color = BentoGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(3.dp))
+          OutlinedButton(
+            onClick = onToggleSfx,
+            modifier = Modifier.weight(1f).height(44.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = BentoTextPrimary),
+            border = BorderStroke(1.dp, if (isSfxEnabled) BentoAccentIce else BentoBorder)
+          ) {
+            Icon(
+              imageVector = if (isSfxEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+              contentDescription = null,
+              tint = if (isSfxEnabled) BentoAccentIce else BentoTextMuted,
+              modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "Pilih Relik: Pemulihan (Regen 10% HP/dtk) atau Kristal Berkat.",
-              color = BentoTextSecondary,
-              fontSize = 9.sp,
-              lineHeight = 13.sp
+              text = if (isSfxEnabled) "SFX: Aktif" else "SFX: Mati",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold
             )
           }
+
+          OutlinedButton(
+            onClick = onToggleHaptics,
+            modifier = Modifier.weight(1f).height(44.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = BentoTextPrimary),
+            border = BorderStroke(1.dp, if (isHapticsEnabled) BentoAccentIce else BentoBorder)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Vibration,
+              contentDescription = null,
+              tint = if (isHapticsEnabled) BentoAccentIce else BentoTextMuted,
+              modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = if (isHapticsEnabled) "Getar: Aktif" else "Getar: Mati",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        }
+
+        // Panduan Kontrol & Gameplay
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = BentoSurface,
+          border = BorderStroke(1.dp, BentoBorderSubtle),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(modifier = Modifier.padding(10.dp)) {
+            Text(
+              text = "🎮 Cara Bermain:",
+              color = BentoAccentIce,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+              text = "• Gerakkan joystick virtual di sisi kiri layar untuk bergerak.\n• Hero akan otomatis menyerang musuh terdekat sesuai jangkauan senjatanya.\n• Ambil kristal EXP untuk naik level dan memilih skill pasif / pusaka abadi.",
+              color = BentoTextSecondary,
+              fontSize = 10.sp,
+              lineHeight = 14.sp
+            )
+          }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Button(
+          onClick = onDismiss,
+          modifier = Modifier.fillMaxWidth().height(42.dp),
+          shape = RoundedCornerShape(12.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = BentoAccentIce,
+            contentColor = BentoAccentDark
+          )
+        ) {
+          Text(text = "TUTUP PENGATURAN", fontSize = 12.sp, fontWeight = FontWeight.Black)
         }
       }
     }
